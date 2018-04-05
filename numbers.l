@@ -81,10 +81,10 @@ SEP [_]
 %%
 %{
 	uint32_t base = 0;
-    bool have_digit = false;
+	bool have_digit = false;
 
-    if (!result)
-        yyterminate();
+	if (!result)
+		yyterminate();
 
 %}
 
