@@ -24,7 +24,15 @@ project(numbers)
 find_package(FLEX)
 flex_target(Numbers_impl numbers.l ${CMAKE_CURRENT_BINARY_DIR}/numbers.c)
 
-add_executable(numbers ${FLEX_Numbers_impl_OUTPUTS} COPYING)
+# numbers.h is here
+include_directories(${CMAKE_SOURCE_DIR})
+
+add_executable(numbers
+	COPYING
+	${FLEX_Numbers_impl_OUTPUTS}
+	main.c
+	numbers.h
+)
 
 enable_testing()
 macro(numbers_test name input expected)

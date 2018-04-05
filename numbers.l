@@ -20,12 +20,9 @@
 // <https://spdx.org/licenses/GPL-3.0-or-later.html>
 //
 
-#include <stdbool.h>
-#include <stdint.h>
+#include "numbers.h"
 
-typedef uint64_t result_t;
-
-#define YY_DECL bool yylex(result_t* result, int* sign)
+#define YY_DECL bool yylex(result_t* result, sign_t* sign)
 
 #define yyterminate() return false
 
@@ -149,27 +146,22 @@ int yywrap()
 	return 1;
 }
 
-#include <inttypes.h>
-
-int main(int argc, char* argv[])
+bool numbers(const char* const text, result_t* const result, sign_t* sign)
 {
-	if (argc <= 1)
-		return 1;
+	if (!(text && result))
+		return false;
 
-	result_t        result = 0;
-	int             sign   = 0;
-	YY_BUFFER_STATE buffer = yy_scan_string(argv[1]);
-	const bool      good   = yylex(&result, &sign);
+	sign_t dummy_sign = 0;
+	if (!sign)
+		sign = &dummy_sign;
+
+	YY_BUFFER_STATE buffer = yy_scan_string(text);
+	const bool      good   = yylex(result, sign);
 	yy_delete_buffer(buffer);
 
-	if (good)
-	{
-		printf("%s%" PRIu64 "\n", result != 0 && sign < 0 ? "-" : "", result);
-		return 0;
-	}
-	else
-	{
-		puts("bad");
-		return 1;
-	}
+	// don't return -0
+	if (*result == 0)
+		*sign = 1;
+
+	return good;
 }
