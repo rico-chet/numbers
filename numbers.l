@@ -123,7 +123,7 @@ int main(int argc, char* argv[])
 
 	if (good)
 	{
-		printf("%u\n", result);
+		printf("%llu\n", result);
 		return 0;
 	}
 	else
