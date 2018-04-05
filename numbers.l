@@ -5,7 +5,7 @@
 
 typedef uint64_t result_t;
 
-#define YY_DECL bool yylex(result_t* result)
+#define YY_DECL bool yylex(result_t* result, int* sign)
 
 #define yyterminate() return false
 
@@ -82,11 +82,17 @@ SEP [_]
 %{
 	uint32_t base = 0;
 	bool have_digit = false;
+	bool have_sign = false;
 
-	if (!result)
+	if (!(result && sign))
 		yyterminate();
 
+	*result = 0;
+	*sign = 0;
+
 %}
+
+[+-] { have_sign = true; *sign = yytext[0] == '-' ? -1 : 1; }
 
 b({BIN}|{SEP})   { BEGIN(binary     ); base =  2; /* skip prefix and re-parse */ yyless(1); }
 0                { BEGIN(octal      ); base =  8; have_digit = true;                        }
@@ -111,19 +117,22 @@ int yywrap()
 	return 1;
 }
 
+#include <inttypes.h>
+
 int main(int argc, char* argv[])
 {
 	if (argc <= 1)
 		return 1;
 
 	result_t        result = 0;
+	int             sign   = 0;
 	YY_BUFFER_STATE buffer = yy_scan_string(argv[1]);
-	const bool      good   = yylex(&result);
+	const bool      good   = yylex(&result, &sign);
 	yy_delete_buffer(buffer);
 
 	if (good)
 	{
-		printf("%llu\n", result);
+		printf("%s%" PRIu64 "\n", sign < 0 ? "-" : "", result);
 		return 0;
 	}
 	else
