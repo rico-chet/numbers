@@ -12,8 +12,19 @@ typedef uint64_t result_t;
 
 %{
 
-static bool overflows(const result_t* const result, const result_t next_digit, const uint32_t base) {
-    return !(result && *result <= *result * base + next_digit);
+static bool overflows(const result_t current_result, const result_t next_digit, result_t* const next_result, const uint32_t base) {
+    result_t next_result_m = 0;
+    if (__builtin_umull_overflow(current_result, base, &next_result_m))
+        return true;
+
+    result_t next_result_ma = next_result_m + next_digit;
+    if (__builtin_uaddl_overflow(next_result_m, next_digit, &next_result_ma))
+        return true;
+
+    if (next_result)
+        *next_result = next_result_ma;
+
+    return false;
 }
 
 static result_t get_digit(const char* const digit_text) {
@@ -32,11 +43,11 @@ static bool process_digit(result_t* result, const char* const digit_text, const 
         return false;
 
     const result_t digit = get_digit(yytext);
-    if (overflows(result, digit, base)) {
+    if (overflows(*result, digit, result, base)) {
+        *result = 0;
         return false;
     }
 
-    *result = *result * base + digit;
     return true;
 }
 
