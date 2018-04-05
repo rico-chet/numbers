@@ -59,8 +59,10 @@ numbers_test(hex-negative 0xG bad)
 
 numbers_test(bin-negative b  bad)
 numbers_test(dec-negative A  bad)
+numbers_test(dec-negative +-1  bad)
 numbers_test(hex-negative 0x bad)
 numbers_test(hex-negative 0x__ bad)
+numbers_test(hex-negative _0xA bad)
 
 numbers_test(bin-negative b1_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111_1111 bad)
 numbers_test(oct-negative 02_777_777_777_777_777_777_777 bad)
