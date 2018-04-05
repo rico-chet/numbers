@@ -110,9 +110,21 @@ SEP [_]
 	*result = 0;
 	*sign = 0;
 
+#define PROCESS_DIGIT() \
+	if (!process_digit(result, yytext, base)) \
+		yyterminate(); \
+	else \
+		have_digit = true
+
 %}
 
-[+-] { have_sign = true; *sign = yytext[0] == '-' ? -1 : 1; }
+[+-] {
+	if (have_sign)
+		yyterminate();
+
+	have_sign = true;
+	*sign = yytext[0] == '-' ? -1 : 1;
+}
 
 b({BIN}|{SEP})   { BEGIN(binary     ); base =  2; /* skip prefix and re-parse */ yyless(1); }
 0                { BEGIN(octal      ); base =  8; have_digit = true;                        }
@@ -121,10 +133,10 @@ b({BIN}|{SEP})   { BEGIN(binary     ); base =  2; /* skip prefix and re-parse */
 
 <binary,octal,decimal,hexadecimal>{SEP} { /* ignore separators */ }
 
-<binary>{BIN}      { if (!process_digit(result, yytext, base)) yyterminate(); else have_digit = true; }
-<octal>{OCT}       { if (!process_digit(result, yytext, base)) yyterminate(); else have_digit = true; }
-<decimal>{DEC}     { if (!process_digit(result, yytext, base)) yyterminate(); else have_digit = true; }
-<hexadecimal>{HEX} { if (!process_digit(result, yytext, base)) yyterminate(); else have_digit = true; }
+<binary>{BIN}      { PROCESS_DIGIT(); }
+<octal>{OCT}       { PROCESS_DIGIT(); }
+<decimal>{DEC}     { PROCESS_DIGIT(); }
+<hexadecimal>{HEX} { PROCESS_DIGIT(); }
 
 <binary,octal,decimal,hexadecimal><<EOF>> { return have_digit; }
 <binary,octal,decimal,hexadecimal>. { yyterminate(); }
@@ -152,7 +164,7 @@ int main(int argc, char* argv[])
 
 	if (good)
 	{
-		printf("%s%" PRIu64 "\n", sign < 0 ? "-" : "", result);
+		printf("%s%" PRIu64 "\n", result != 0 && sign < 0 ? "-" : "", result);
 		return 0;
 	}
 	else
