@@ -1,4 +1,5 @@
 %top{
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -12,43 +13,56 @@ typedef uint64_t result_t;
 
 %{
 
-static bool overflows(const result_t current_result, const result_t next_digit, result_t* const next_result, const uint32_t base) {
-    result_t next_result_m = 0;
-    if (__builtin_umull_overflow(current_result, base, &next_result_m))
-        return true;
+static result_t get_digit(const char* const digit_text)
+{
+	if (!digit_text)
+		return 0;
 
-    result_t next_result_ma = next_result_m + next_digit;
-    if (__builtin_uaddl_overflow(next_result_m, next_digit, &next_result_ma))
-        return true;
-
-    if (next_result)
-        *next_result = next_result_ma;
-
-    return false;
+	const char digit_char = digit_text[0];
+	if ('0' <= digit_char && digit_char <= '9')
+		return digit_char - '0';
+	else if ('a' <= digit_char && digit_char <= 'f')
+		return 10 + digit_char - 'a';
+	else if ('A' <= digit_char && digit_char <= 'F')
+		return 10 + digit_char - 'A';
+	else
+		return 0;
 }
 
-static result_t get_digit(const char* const digit_text) {
-    const char digit_char = digit_text[0];
-    if ('0' <= digit_char && digit_char <= '9')
-        return digit_char - '0';
-    else if ('a' <= digit_char && digit_char <= 'f')
-        return 10 + digit_char - 'a';
-    else if ('A' <= digit_char && digit_char <= 'F')
-        return 10 + digit_char - 'A';
-    else return 0;
+static bool overflows(const result_t  current_result,
+                      const result_t  next_digit,
+                      result_t* const next_result,
+                      const uint32_t  base)
+{
+	result_t next_result_m = 0;
+	if (__builtin_umull_overflow(current_result, base, &next_result_m))
+		return true;
+
+	result_t next_result_ma = next_result_m + next_digit;
+	if (__builtin_uaddl_overflow(next_result_m, next_digit, &next_result_ma))
+		return true;
+
+	if (next_result)
+		*next_result = next_result_ma;
+
+	return false;
 }
 
-static bool process_digit(result_t* result, const char* const digit_text, const uint32_t base) {
-    if (!result)
-        return false;
+static bool process_digit(result_t* const   result,
+                          const char* const digit_text,
+                          const uint32_t    base)
+{
+	if (!(result && digit_text))
+		return false;
 
-    const result_t digit = get_digit(yytext);
-    if (overflows(*result, digit, result, base)) {
-        *result = 0;
-        return false;
-    }
+	const result_t digit = get_digit(yytext);
+	if (overflows(*result, digit, result, base))
+	{
+		*result = 0;
+		return false;
+	}
 
-    return true;
+	return true;
 }
 
 %}
@@ -92,24 +106,29 @@ b({BIN}|{SEP})   { BEGIN(binary     ); base =  2; /* skip prefix and re-parse */
 %%
 
 #undef yywrap
-int yywrap() {
+int yywrap()
+{
 	return 1;
 }
 
-int main(int argc, char* argv[]) {
-    if (argc <= 1)
-        return 1;
+int main(int argc, char* argv[])
+{
+	if (argc <= 1)
+		return 1;
 
-	result_t result = 0;
-    YY_BUFFER_STATE buffer = yy_scan_string(argv[1]);
-	const bool good = yylex(&result);
+	result_t        result = 0;
+	YY_BUFFER_STATE buffer = yy_scan_string(argv[1]);
+	const bool      good   = yylex(&result);
 	yy_delete_buffer(buffer);
 
-    if (good) {
-        printf("%u\n", result);
-        return 0;
-    } else {
+	if (good)
+	{
+		printf("%u\n", result);
+		return 0;
+	}
+	else
+	{
 		puts("bad");
-        return 1;
-    }
+		return 1;
+	}
 }
