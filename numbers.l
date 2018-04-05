@@ -10,6 +10,38 @@ typedef uint64_t result_t;
 
 }
 
+%{
+
+static bool overflows(const result_t* const result, const result_t next_digit, const uint32_t base) {
+    return !(result && *result <= *result * base + next_digit);
+}
+
+static result_t get_digit(const char* const digit_text) {
+    const char digit_char = digit_text[0];
+    if ('0' <= digit_char && digit_char <= '9')
+        return digit_char - '0';
+    else if ('a' <= digit_char && digit_char <= 'f')
+        return 10 + digit_char - 'a';
+    else if ('A' <= digit_char && digit_char <= 'F')
+        return 10 + digit_char - 'A';
+    else return 0;
+}
+
+static bool process_digit(result_t* result, const char* const digit_text, const uint32_t base) {
+    if (!result)
+        return false;
+
+    const result_t digit = get_digit(yytext);
+    if (overflows(result, digit, base)) {
+        return false;
+    }
+
+    *result = *result * base + digit;
+    return true;
+}
+
+%}
+
 %x binary
 %x octal
 %x decimal
@@ -27,32 +59,7 @@ SEP [_]
     bool have_digit = false;
 
     if (!result)
-        return false;
-
-	bool overflows(const result_t next_digit) {
-		return !(*result <= *result * base + next_digit);
-	}
-
-	result_t get_digit(const char* const digit_text) {
-		const char digit_char = digit_text[0];
-		if ('0' <= digit_char && digit_char <= '9')
-			return digit_char - '0';
-		else if ('a' <= digit_char && digit_char <= 'f')
-			return 10 + digit_char - 'a';
-		else if ('A' <= digit_char && digit_char <= 'F')
-			return 10 + digit_char - 'A';
-		else return 0;
-	}
-
-    bool process_digit(const char* const digit_text) {
-		const result_t digit = get_digit(yytext);
-		if (overflows(digit)) {
-            return false;
-		}
-
-		*result = *result * base + digit;
-        return true;
-	}
+        yyterminate();
 
 %}
 
@@ -63,10 +70,10 @@ b({BIN}|{SEP})   { BEGIN(binary     ); base =  2; /* skip prefix and re-parse */
 
 <binary,octal,decimal,hexadecimal>{SEP} { /* ignore separators */ }
 
-<binary>{BIN}      { if (!process_digit(yytext)) yyterminate(); else have_digit = true; }
-<octal>{OCT}       { if (!process_digit(yytext)) yyterminate(); else have_digit = true; }
-<decimal>{DEC}     { if (!process_digit(yytext)) yyterminate(); else have_digit = true; }
-<hexadecimal>{HEX} { if (!process_digit(yytext)) yyterminate(); else have_digit = true; }
+<binary>{BIN}      { if (!process_digit(result, yytext, base)) yyterminate(); else have_digit = true; }
+<octal>{OCT}       { if (!process_digit(result, yytext, base)) yyterminate(); else have_digit = true; }
+<decimal>{DEC}     { if (!process_digit(result, yytext, base)) yyterminate(); else have_digit = true; }
+<hexadecimal>{HEX} { if (!process_digit(result, yytext, base)) yyterminate(); else have_digit = true; }
 
 <binary,octal,decimal,hexadecimal><<EOF>> { return have_digit; }
 <binary,octal,decimal,hexadecimal>. { yyterminate(); }
