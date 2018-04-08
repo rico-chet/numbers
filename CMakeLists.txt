@@ -35,8 +35,9 @@ add_executable(numbers
 )
 
 enable_testing()
-macro(numbers_test name input expected)
-    add_test(${name}-${input} /bin/sh -c "[ \"$(./numbers ${input})\" = \"${expected}\" ]")
+macro(numbers_test name input expected_regex)
+	add_test(NAME "${name}-${input}" COMMAND ./numbers "${input}")
+	set_tests_properties("${name}-${input}" PROPERTIES PASS_REGULAR_EXPRESSION "${expected_regex}")
 endmacro(numbers_test)
 
 # simple positive tests
@@ -66,7 +67,6 @@ numbers_test(dec-negative A   bad)
 numbers_test(hex-negative 0xG bad)
 
 numbers_test(bin-negative b  bad)
-numbers_test(dec-negative A  bad)
 numbers_test(dec-negative +-1  bad)
 numbers_test(hex-negative 0x bad)
 numbers_test(hex-negative 0x__ bad)
