@@ -107,7 +107,8 @@ SEP [_]
 		yyterminate();
 
 	*result = 0;
-	*sign = 0;
+	// positite sign is implicit
+	*sign = 1;
 
 #define PROCESS_DIGIT() \
 	if (!process_digit(result, yytext, base)) \
@@ -137,7 +138,13 @@ b({BIN}|{SEP})   { BEGIN(binary     ); base =  2; /* skip prefix and re-parse */
 <decimal>{DEC}     { PROCESS_DIGIT(); }
 <hexadecimal>{HEX} { PROCESS_DIGIT(); }
 
-<binary,octal,decimal,hexadecimal><<EOF>> { return have_digit; }
+<binary,octal,decimal,hexadecimal><<EOF>> {
+	// zero has no sign
+	if (have_digit)
+		*sign = *result == 0 ? 0 : *sign;
+	return have_digit;
+}
+
 <binary,octal,decimal,hexadecimal>. { yyterminate(); }
 . { yyterminate(); }
 %%
@@ -153,6 +160,7 @@ bool numbers(const char* const text, result_t* const result, sign_t* sign)
 	if (!(text && result))
 		return false;
 
+	// sign is optional
 	sign_t dummy_sign = 0;
 	if (!sign)
 		sign = &dummy_sign;
@@ -160,10 +168,6 @@ bool numbers(const char* const text, result_t* const result, sign_t* sign)
 	YY_BUFFER_STATE buffer = yy_scan_string(text);
 	const bool      good   = yylex(result, sign);
 	yy_delete_buffer(buffer);
-
-	// don't return -0
-	if (*result == 0)
-		*sign = 1;
 
 	return good;
 }

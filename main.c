@@ -34,7 +34,9 @@ int main(const int argc, const char* const argv[])
 	sign_t   sign   = 0;
 	if (numbers(argv[1], &result, &sign))
 	{
-		printf("%s%" PRIu64 "\n", sign < 0 ? "-" : "", result);
+		printf("%" PRIu64 " %s\n",
+		       result,
+		       sign < 0 ? "neg" : (sign == 0 ? "zero" : "pos"));
 		return 0;
 	}
 	else
