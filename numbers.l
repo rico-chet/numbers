@@ -107,7 +107,7 @@ SEP [_]
 		yyterminate();
 
 	*result = 0;
-	// positite sign is implicit
+	// positive sign is implicit
 	*sign = 1;
 
 #define PROCESS_DIGIT() \
