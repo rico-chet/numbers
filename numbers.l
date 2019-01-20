@@ -1,7 +1,7 @@
 %top{
 
 //
-// Copyright (C) 2018 Alex Thiessen <alex.thiessen.de+github@gmail.com>
+// Copyright (C) 2018-2019 Alex Thiessen <alex.thiessen.de+github@gmail.com>
 //
 // This file is part of Numbers.
 //
